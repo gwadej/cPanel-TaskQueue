@@ -1,6 +1,8 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+0.605     2014-02-20 12:56:10 America/Chicago
+       Only update state file if not already up to date.
 0.604     2012-11-29 12:41:58 America/Chicago
        Correct scheduler code to use the new reconstitute method to restore
        task objects loaded from disk.

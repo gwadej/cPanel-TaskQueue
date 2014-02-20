@@ -5,7 +5,7 @@ cPanel::TaskQueue - FIFO queue of tasks to perform
 
 =head1 VERSION
 
-This document describes cPanel::TaskQueue version 0.604
+This document describes cPanel::TaskQueue version 0.605
 
 =head1 SYNOPSIS
 
@@ -508,7 +508,11 @@ None reported.
 
 =head1 BUGS AND LIMITATIONS
 
-none reported.
+In spite of the locking that's used to prevent multiple concurrent writes
+or reads being combined with writes, it is sometimes possible for a state
+file to become corrupt or improperly emptied if many processes are attempting
+to update it at the same time. There is most likely still a race condition
+that's exposed under heavy load.
 
 =head1 SEE ALSO
 
