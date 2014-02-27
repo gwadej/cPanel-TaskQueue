@@ -1,6 +1,6 @@
 package cPanel::TaskQueue::Scheduler;
 
-# cpanel - cPanel/TaskQueue/Scheduler.pm          Copyright(c) 2012 cPanel, Inc.
+# cpanel - cPanel/TaskQueue/Scheduler.pm          Copyright(c) 2014 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 #
@@ -149,8 +149,8 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             # have all parts
             cPanel::StateFile->_throw('Invalid token.')
               unless defined $version
-                  and defined $name
-                  and defined $file;
+              and defined $name
+              and defined $file;
 
             # all parts make sense.
             my $name_match = _get_serializer()->filename("${name}_sched");
@@ -419,7 +419,7 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
         return [
             map {
                 { time => $_->{time}, task => $_->{task}->clone() }
-              } @{ $self->{time_queue} }
+            } @{ $self->{time_queue} }
         ];
     }
 

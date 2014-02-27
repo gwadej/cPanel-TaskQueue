@@ -1,6 +1,6 @@
 package cPanel::TaskQueue::PluginManager;
 
-# cpanel - cPanel/TaskQueue/PluginManager.pm      Copyright(c) 2012 cPanel, Inc.
+# cpanel - cPanel/TaskQueue/PluginManager.pm      Copyright(c) 2014 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 #
