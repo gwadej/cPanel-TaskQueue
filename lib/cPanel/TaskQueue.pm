@@ -593,7 +593,7 @@ my $taskqueue_uuid = 'TaskQueue';
 
             # remove finished item from the list.
             $self->{processing_list} = [ grep { $_->uuid() ne $uuid } @{ $self->{processing_list} } ];
-            $self->_remove_task_from_deferral_object();
+            $self->_remove_task_from_deferral_object( $task );
         }
 
         # Don't lose any exceptions.
@@ -746,11 +746,18 @@ my $taskqueue_uuid = 'TaskQueue';
         my ( $self, $guard ) = @_;
 
         my $num_processing = @{ $self->{processing_list} };
-        return unless $num_processing;
+        my $num_deferred   = @{ $self->{deferral_queue} };
+
+        # If the processing_list is empty, and we have no deferred tasks we
+        # are finished processing
+        return if !$num_processing && !$num_deferred;
 
         # Remove tasks that have already completed from the in-memory list.
         $self->_remove_completed_tasks_from_list();
-        return if @{ $self->{processing_list} } == $num_processing;
+
+        # No changes, we can leave
+        return if @{ $self->{processing_list} } == $num_processing
+                && @{ $self->{deferral_queue} } == $num_deferred;
 
         # Was not locked, so we need to lock and remove completed tasks again.
         if ( !$guard ) {
