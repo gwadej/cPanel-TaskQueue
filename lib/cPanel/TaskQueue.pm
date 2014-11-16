@@ -160,7 +160,12 @@ my $taskqueue_uuid = 'TaskQueue';
         $guard->update_file();
         return;
     }
-    sub is_paused { return $_[0]->{paused} || 0; }
+    sub _is_paused { return $_[0]->{paused} || 0; }
+    sub is_paused {
+        my ($self) = @_;
+        $self->{disk_state}->synch();
+        return $self->_is_paused();
+    }
 
     # --------------------------------------
     # Class methods
@@ -334,7 +339,7 @@ my $taskqueue_uuid = 'TaskQueue';
         $self->{max_task_timeout}      = $meta->{max_task_to}  if $meta->{max_task_to} > 0;
         $self->{max_in_process}        = $meta->{max_running}  if $meta->{max_running} > 0;
         $self->{default_child_timeout} = $meta->{def_child_to} if $meta->{def_child_to} > 0;
-        $self->{paused} = 1 if exists $meta->{paused} && $meta->{paused};
+        $self->{paused}    = (exists $meta->{paused} && $meta->{paused}) ? 1 : 0;
         $self->{defer_obj} = exists $meta->{defer_obj} ? $meta->{defer_obj} : undef;
 
         # Clean queues that have been read from disk.
@@ -496,7 +501,7 @@ my $taskqueue_uuid = 'TaskQueue';
         $self->_clean_completed_tasks();
 
         # If we are paused, there is no work to do.
-        return if $self->{paused};
+        return if $self->_is_paused;
 
         return scalar( @{ $self->{processing_list} } ) < $self->{max_in_process} && 0 != @{ $self->{queue_waiting} };
     }
@@ -532,7 +537,7 @@ my $taskqueue_uuid = 'TaskQueue';
         }
 
         # If we are paused, there is no work to do.
-        return 1 if $self->{paused};
+        return 1 if $self->_is_paused;
 
         my ( $task, $processor );
         while ( !$task ) {
