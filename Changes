@@ -1,6 +1,7 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+0.700    2014-10-15 16:37:12 America/Chicago
      - Add ability to flush all scheduled tasks to the waiting queue, whether
        or not they have reached their scheduled time.
      - Add the ability to delete all scheduled tasks.
