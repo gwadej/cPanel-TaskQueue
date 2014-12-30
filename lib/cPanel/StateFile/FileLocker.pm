@@ -92,7 +92,7 @@ sub file_lock {
                 # The file says it is expired.
                 my $expired = time - $max_time;
                 $self->_info("Stale lock file '$lockfile': lock expired $expired seconds ago, removing...");
-                unlink $lockfile;
+                unlink $lockfile or $self->_warn("file_lock: Failed to delete expired lockfile '$lockfile': $!");
                 next ATTEMPT;
             }
             if ( $pid == $$ and $0 eq $name ) {
@@ -102,13 +102,13 @@ sub file_lock {
 
                 # Was locked by another process with this PID or $0 changed.
                 $self->_warn("Inconsistent lock: my PID but process named '$name': removing lock");
-                unlink $lockfile;
+                unlink $lockfile or $self->_warn("file_lock: Failed to delete lockfile with my pid '$lockfile': $!");
                 next ATTEMPT;
             }
             elsif ( !_pid_alive( $lockfile, $pid ) ) {
                 if ( -e $lockfile ) {
                     $self->_warn('Removing abandoned lock file.');
-                    unlink $lockfile;
+                    unlink $lockfile or $self->_warn("file_lock: Failed to delete abandoned lockfile '$lockfile': $!");
                 }
                 next ATTEMPT;
             }
@@ -140,7 +140,7 @@ sub file_unlock {
         return;
     }
     if ( $$ == $pid ) {
-        unlink $lockfile;
+        unlink $lockfile or $self->_warn("file_unlock: Failed to delete lockfile '$lockfile': $!");
         return;
     }
     else {
@@ -230,7 +230,7 @@ sub _read_lock_file {
             # the file has existed for some time but still has nothing in it.
             # kill it.
             $self->_info('Old, but empty lock file deleted.');
-            unlink $lockfile;
+            unlink $lockfile or $self->_warn("_read_file_lock: Failed to delete lockfile '$lockfile': $!");
             return ( 0, 0, 0 );
         }
         return;
