@@ -140,6 +140,7 @@ sub file_unlock {
         return;
     }
     if ( $$ == $pid ) {
+        sleep 1 if rand(5) < 1;
         unlink $lockfile or $self->_warn("file_unlock: Failed to delete lockfile '$lockfile': $!");
         return;
     }

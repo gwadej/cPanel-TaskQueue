@@ -4,12 +4,14 @@
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use strict;
 use warnings;
 
 use cPanel::TaskQueue::PluginManager ();
 use cPanel::TaskQueue::Ctrl          ();
-use Getopt::Long;
+use cPanel::TaskQueue::Config        ();
 use Term::ReadLine;
 
 my $term;
@@ -21,36 +23,17 @@ my @shell_help = (
 main() unless caller;
 
 sub main {
-    my $queue_dir = '.';
-    my $qname     = 'main';
-    my $sname;
-    my $plugindirs = [];
-    my $namespaces = [];
-    my $plugins    = [];
-    my $logfile;
-    my $serial;
+    my $options = cPanel::TaskQueue::Config::get_options('taskqueue.cfg');
 
-    handle_config_file('taskqueue.cfg');
+    unshift @INC, @{$options->{plugindir}} if @{$options->{plugindir}};
+    load_plugins( @{$options}{qw/plugindir namespace plugin/} );
 
-    GetOptions(
-        'dir=s',        \$queue_dir,
-        'qname=s',      \$qname,
-        'sname=s',      \$sname,
-        'plugindir=s@', \$plugindirs,
-        'namespace=s@', \$namespaces,
-        'plugin=s@',    \$plugins,
-        'logfile=s',    \$logfile,      # keep config file compatible between tools.
-        'serial=s',     \$serial,
-    );
-
-    $namespaces = [ 'cPanel::TaskProcessors', ] unless @{$namespaces};
-    die "Missing plugin directories.\n" unless @{$plugindirs};
-    unshift @INC, @{$plugindirs} if @{$plugindirs};
-    $sname = $qname unless defined $sname;
-
-    load_plugins( $plugindirs, $namespaces, $plugins );
-
-    my $ctrl = cPanel::TaskQueue::Ctrl->new( { 'qdir' => $queue_dir, 'qname' => $qname, 'sname' => $sname, 'serial' => $serial } );
+    my $ctrl = cPanel::TaskQueue::Ctrl->new( {
+         'qdir'   => $options->{dir},
+         'qname'  => $options->{qname},
+         'sname'  => $options->{sname},
+         'serial' => $options->{serial}
+    } );
 
     process_command($ctrl);
     exit 0;
@@ -117,6 +100,16 @@ sub process_command {
             else {
                 safe_run( $ctrl, parse_line($line) );
             }
+        }
+    }
+    elsif( $ARGV[0] eq 'batch' )
+    {
+        while (<STDIN>) {
+            my $line = $_;
+            last if $line =~ /^\s*(?:q(?:uit)?|exit|bye)\s*$/i;
+
+            my ( $cmd, @args ) = split( / /, $line );
+            safe_run( $ctrl, parse_line($line) );
         }
     }
     else {
@@ -382,6 +375,11 @@ only display commands for that plugin.
 =item status
 
 Print the status of the Task Queue and Scheduler.
+
+=item batch
+
+Take a list of commands from STDIN, one per line and execute them. This is
+good for load testing.
 
 =back
 

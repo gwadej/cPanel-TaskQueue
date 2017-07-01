@@ -1,55 +1,36 @@
 #!/usr/bin/perl
 
-# cpanel - ProgPath.pl                            Copyright(c) 2010 cPanel, Inc.
+# cpanel - bin/taskqueuerun                       Copyright(c) 2014 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use strict;
 use warnings;
 
 use cPanel::TaskQueue                ();
 use cPanel::TaskQueue::Scheduler     ();
 use cPanel::TaskQueue::PluginManager ();
-use Getopt::Long;
+use cPanel::TaskQueue::Config        ();
 
 main() unless caller;
 
 sub main {
-    my $queue_dir  = '.';
-    my $qname      = 'main';
-    my $sname;
-    my $plugindirs = [];
-    my $namespaces = [];
-    my $plugins    = [];
-    my $logfile;
+    my $options = cPanel::TaskQueue::Config::get_options('taskqueue.cfg');
 
-    handle_config_file( 'taskqueue.cfg' );
+    unshift @INC, @{$options->{plugindir}} if @{$options->{plugindir}};
 
-    GetOptions(
-        'dir=s',        \$queue_dir,
-        'qname=s',      \$qname,
-        'sname=s',      \$sname,
-        'plugindir=s@', \$plugindirs,
-        'namespace=s@', \$namespaces,
-        'plugin=s@',    \$plugins,
-        'logfile=s',    \$logfile,     # keep config file compatible between tools.
-    );
-
-    $namespaces = [ 'cPanel::TaskProcessors', ] unless @{$namespaces};
-    die "Missing plugin directories.\n" unless @{$plugindirs};
-    unshift @INC, @{$plugindirs} if @{$plugindirs};
-    $sname = $qname unless defined $sname;
-
-    load_plugins( $plugindirs, $namespaces, $plugins );
+    load_plugins( @{$options}{qw/plugindir namespace plugin/} );
 
     my $queue = cPanel::TaskQueue->new({
-        name => $qname,
-        state_dir => $queue_dir,
+        name        => $options->{qname},
+        state_dir   => $options->{dir},
         max_running => 1,
     });
     my $sched = cPanel::TaskQueue::Scheduler->new({
-        name => $qname,
-        state_dir => $queue_dir,
+        name      => $options->{sname},
+        state_dir => $options->{dir},
     });
 
     eval {
@@ -83,6 +64,7 @@ sub load_plugins {
             namespaces  => $namespaces,
         );
     }
+    return;
 }
 
 sub handle_config_file {
@@ -92,6 +74,7 @@ sub handle_config_file {
         shift @ARGV;
     }
     unshift @ARGV, config_file( $config ) if -e $config;
+    return;
 }
 
 sub config_file {
